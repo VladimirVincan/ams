@@ -1,6 +1,6 @@
 main:
-	li a0 3
-	li a1 5
+	li a0 9
+	li a1 7
 	li a2 1
 	jal min
 	jal end
