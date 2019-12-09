@@ -23,8 +23,10 @@ architecture structural of TOP_RISCV is
    signal mem_to_reg_s       : std_logic;
    signal alu_op_s           : std_logic_vector (4 downto 0);
    signal alu_src_s          : std_logic;
+   signal jmp_u_s            : std_logic;
+   signal jal_s            : std_logic;
    signal rd_we_s            : std_logic;
-   signal branch_condition_s : std_logic;
+   signal branch_condition_s : std_logic_vector (5 downto 0);
    signal pc_next_sel_s      : std_logic;
 begin
 
@@ -44,6 +46,8 @@ begin
          alu_op_i            => alu_op_s,
          pc_next_sel_i       => pc_next_sel_s,
          alu_src_i           => alu_src_s,
+         jmp_u_i             => jmp_u_s,
+         jal_i               => jal_s,
          rd_we_i             => rd_we_s,
          branch_condition_o  => branch_condition_s);
 
@@ -56,6 +60,8 @@ begin
          alu_op_o           => alu_op_s,
          pc_next_sel_o      => pc_next_sel_s,
          alu_src_o          => alu_src_s,
+         jmp_u_o            => jmp_u_s,
+         jal_o            => jal_s,
          rd_we_o            => rd_we_s,
          branch_condition_i => branch_condition_s,
          data_mem_we_o      => data_mem_we_o);
@@ -63,5 +69,3 @@ begin
 
 
 end architecture;
-
-

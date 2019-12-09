@@ -20,9 +20,9 @@ END ALU;
 ARCHITECTURE behavioral OF ALU IS
 
    constant  l2WIDTH : natural := integer(ceil(log2(real(WIDTH))));
-   signal    add_res, sub_res, or_res, and_res,res_s:  STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);
+   signal    xor_res, slt_res, srl_res, sll_res, add_res, sub_res, or_res, and_res,res_s:  STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);
 
-   
+
 BEGin
 
    -- addition
@@ -32,9 +32,19 @@ BEGin
    -- and gate
    and_res <= a_i and b_i;
    -- or gate
-   or_res <= a_i or b_i;   
+   or_res <= a_i or b_i;
+   -- sll
+   sll_res <= std_logic_vector(shift_left(unsigned(a_i), to_integer(unsigned(b_i))));
+   -- slr
+   srl_res <= std_logic_vector(shift_right(unsigned(a_i), to_integer(unsigned(b_i))));
+   -- xor
+   xor_res <= a_i xor b_i;
+   -- slt
+   slt_res <= std_logic_vector(to_unsigned(1, WIDTH)) when a_i < b_i else
+              std_logic_vector(to_unsigned(0, WIDTH));
 
-   
+
+
    -- SELECT RESULT
    res_o <= res_s;
    with op_i select
@@ -42,13 +52,17 @@ BEGin
                or_res  when or_op, --or
                add_res when add_op, --add
                sub_res when sub_op, --sub
-               (others => '1') when others; 
+               sll_res when sll_op, --sll
+               srl_res when srl_op, --srl
+               xor_res when xor_op, --xor
+               slt_res when lts_op, --slt
+               (others => '1') when others;
 
 
    -- Postavlja zero_o na 1 ukoliko je rezultat operacije 0
    zero_o <= '1' when res_s = std_logic_vector(to_unsigned(0,WIDTH)) else
              '0';
-   
+
    -- Prekoracenje se desava kada ulazi imaju isti znak, a izlaz razlicit
    of_o <= '1' when ((op_i="00011" and (a_i(WIDTH-1)=b_i(WIDTH-1)) and ((a_i(WIDTH-1) xor res_s(WIDTH-1))='1')) or (op_i="10011" and (a_i(WIDTH-1)=res_s(WIDTH-1)) and ((a_i(WIDTH-1) xor b_i(WIDTH-1))='1'))) else
            '0';

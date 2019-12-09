@@ -28,7 +28,7 @@ begin
          when "00" =>
             alu_op_o <= add_op;
          when "01" =>
-            alu_op_o <= eq_op;
+           alu_op_o <= eq_op;
          when others =>
             case funct3_i is
                when "000" =>
@@ -36,10 +36,21 @@ begin
                   if(funct7_i(5) = '1')then
                      alu_op_o <= sub_op;
                   end if;
-               when "110" =>
+              when "110" =>
                   alu_op_o <= or_op;
-               when others =>
+              when "111" =>
                   alu_op_o <= and_op;
+              when "010" =>
+                 alu_op_o <= lts_op;
+              when "100" =>
+                 alu_op_o <= xor_op;
+              when "001" =>
+                 alu_op_o <= sll_op;
+              when others =>
+                 alu_op_o <= srl_op;
+                 if(funct7_i(5) = '1') then
+                   alu_op_o <= sra_op;
+                   end if;
             end case;
       end case;
    end process;

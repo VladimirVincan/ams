@@ -22,9 +22,11 @@ entity data_path is
       alu_op_i            : in  std_logic_vector(4 downto 0);
       pc_next_sel_i       : in  std_logic;
       alu_src_i           : in  std_logic;
+      jmp_u_i             : in  std_logic;
+      jal_i             : in  std_logic;
       rd_we_i             : in  std_logic;
       -- ********* Statusni signali *************************
-      branch_condition_o  : out std_logic
+      branch_condition_o  : out std_logic_vector(5 downto 0)
     -- ******************************************************
       );
 
@@ -32,25 +34,36 @@ end entity;
 
 
 architecture Behavioral of data_path is
-   --**************REGISTRI*********************************   
+   --**************REGISTRI*********************************
    signal pc_reg_s, pc_next_s                   : std_logic_vector (31 downto 0);
    --********************************************************
    --**************SIGNALI***********************************
    signal instruction_s                         : std_logic_vector(31 downto 0);
    signal pc_adder_s                            : std_logic_vector(31 downto 0);
    signal branch_adder_s                        : std_logic_vector(31 downto 0);
-   signal rs1_data_s, rs2_data_s, rd_data_s     : std_logic_vector (31 downto 0);
+   signal pc_next_mux_s                        : std_logic_vector(31 downto 0);
+   signal rs1_data_s, rs2_data_s, rd_data_s1, rd_data_s     : std_logic_vector (31 downto 0);
    signal immediate_extended_s, extended_data_s : std_logic_vector(31 downto 0);
-   -- AlU signali   
+   -- AlU signali
    signal alu_zero_s, alu_of_o_s                : std_logic;
    signal b_s, a_s                              : std_logic_vector(31 downto 0);
    signal alu_result_s                          : std_logic_vector(31 downto 0);
-   --Signali grananja (eng. branch signals).   
+   --Signali grananja (eng. branch signals).
    signal bcc                                   : std_logic;
+   signal beq_condition_s : std_logic;
+   signal bneq_condition_s : std_logic;
+   signal blt_condition_s : std_logic;
+   signal bge_condition_s : std_logic;
+   signal bltu_condition_s : std_logic;
+   signal bgeu_condition_s : std_logic;
+   -- JAL signals
+   signal jal_addr_s : std_logic_vector(31 downto 0);
 --********************************************************
+
+   signal a_s_mux : std_logic_vector(31 downto 0);
 begin
 
-   --***********Sekvencijalna logika**********************   
+   --***********Sekvencijalna logika**********************
    pc_proc : process (clk) is
    begin
       if (rising_edge(clk)) then
@@ -70,26 +83,40 @@ begin
    pc_adder_s     <= std_logic_vector(unsigned(pc_reg_s) + to_unsigned(4, DATA_WIDTH));
    -- sabirac za uslovne skokove
    branch_adder_s <= std_logic_vector(unsigned(immediate_extended_s) + unsigned(pc_reg_s));
+   jal_addr_s <= std_logic_vector(unsigned(immediate_extended_s) + to_unsigned(4, DATA_WIDTH));
+   pc_next_mux_s <= branch_adder_s when jal_i = '0' else
+                    jal_addr_s;
 
    -- Provera uslova skoka
-   branch_condition_o <= '1' when a_s = b_s else
+   beq_condition_s <= '1' when a_s = b_s else
                          '0';
+   bneq_condition_s <= not beq_condition_s;
+   blt_condition_s <= '1' when signed(a_s) < signed(b_s) else
+                      '0';
+   bge_condition_s <= not blt_condition_s;
+   bltu_condition_s <= '1' when unsigned(a_s) < unsigned(b_s) else
+                       '0';
+   bgeu_condition_s <= not bltu_condition_s;
 
+   branch_condition_o <= bgeu_condition_s & bltu_condition_s & bge_condition_s
+                      & blt_condition_s & bneq_condition_s & beq_condition_s;
    -- MUX koji odredjuje sledecu vrednost za programski brojac.
    -- Ako se ne desi skok programski brojac se uvecava za 4.
    with pc_next_sel_i select
       pc_next_s <= pc_adder_s when '0',
-      branch_adder_s          when others;
+      pc_next_mux_s          when others;
 
    -- MUX koji odredjuje sledecu vrednost za b ulaz ALU jedinice.
    b_s <= rs2_data_s when alu_src_i = '0' else
           immediate_extended_s;
    -- Azuriranje a ulaza ALU jedinice
-   a_s <= rs1_data_s;
+   -- a_s <= rs1_data_s;
 
-   -- MUX koji odredjuje sta se upisuje u odredisni registar(rd_data_s)
-   rd_data_s <= data_mem_read_i when mem_to_reg_i = '1' else
+   -- MUX koji odredjuje sta se upisuje u odredisni registar(rd_data_s1)
+   rd_data_s1 <= data_mem_read_i when mem_to_reg_i = '1' else
                 alu_result_s;
+   rd_data_s <= rd_data_s1 when jal_i = '0' else
+                pc_reg_s;
    --*****************************************************
 
    --***********Instanciranja*****************************
@@ -107,7 +134,7 @@ begin
          rs1_data_o    => rs1_data_s,
          rs2_data_o    => rs2_data_s,
          rd_address_i  => instruction_s (11 downto 7),
-         rd_data_i     => rd_data_s);
+         rd_data_i     => rd_data_s1);
 
 
    -- Modul za prosirenje immediate polja instrukcije
@@ -116,6 +143,9 @@ begin
          instruction_i        => instruction_s,
          immediate_extended_o => immediate_extended_s
          );
+
+   a_s <= rs1_data_s when jmp_u_i = '0'
+              else pc_reg_s;
 
    -- Aritmeticko logicka jedinica
    ALU_1 : entity work.ALU
@@ -141,5 +171,3 @@ begin
    data_mem_address_o  <= alu_result_s;
    data_mem_write_o    <= rs2_data_s;
 end architecture;
-
-
