@@ -64,7 +64,7 @@ begin
                                  rs1_address_id_i, rs2_address_id_i)is
    begin
       branch_forward_b_o <= '0';
-      branch_forward_a_o <= '0';      
+      branch_forward_a_o <= '0';
       -- prosledjivanje signala iz MEM faze
       if (rd_we_mem_i = '1' and rd_address_mem_i /= zero_c)then
          if (rd_address_mem_i = rs1_address_id_i)then

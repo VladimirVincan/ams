@@ -20,22 +20,31 @@ END ALU;
 ARCHITECTURE behavioral OF ALU IS
 
    constant  l2WIDTH : natural := integer(ceil(log2(real(WIDTH))));
-   signal    add_res, sub_res, or_res, and_res,res_s, eq_res :  STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);
+   signal    add_res, sub_res, or_res, and_res,res_s, eq_res, sll_res, slr_res, slt_res, xor_res :  STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);
 
    
 BEGIN
 
-   -- sabiranje
+   -- add
    add_res <= std_logic_vector(unsigned(a_i) + unsigned(b_i));
-   -- oduzimanje
+   -- sub
    sub_res <= std_logic_vector(unsigned(a_i) - unsigned(b_i));
-   -- i kolo
+   -- and
    and_res <= a_i and b_i;
-   -- ili kolo
+   -- or
    or_res <= a_i or b_i;
-   -- jednakost
+   -- beq
    eq_res <= std_logic_vector(to_unsigned(1,WIDTH)) when (signed(a_i) = signed(b_i)) else
              std_logic_vector(to_unsigned(0,WIDTH));
+   -- sll
+   sll_res <= std_logic_vector(shift_left(unsigned(a_i), to_integer(unsigned(b_i))));
+   -- slr
+   srl_res <= std_logic_vector(shift_right(unsigned(a_i), to_integer(unsigned(b_i))));
+   -- xor
+   xor_res <= a_i xor b_i;
+   -- slt
+   slt_res <= std_logic_vector(to_unsigned(1, WIDTH)) when a_i < b_i else
+              std_logic_vector(to_unsigned(0, WIDTH));
 
    
    -- prosledi jedan od rezultata na izlaz u odnosu na  operaciju
@@ -46,6 +55,10 @@ BEGIN
                add_res when add_op,
                sub_res when sub_op,
                eq_res  when eq_op,
+               sll_res when sll_op,
+               srl_res when srl_op,
+               xor_res when xor_op,
+               slt_res when slt_op,
                (others => '1') when others; 
 
 
