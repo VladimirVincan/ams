@@ -20,7 +20,7 @@ END ALU;
 ARCHITECTURE behavioral OF ALU IS
 
    constant  l2WIDTH : natural := integer(ceil(log2(real(WIDTH))));
-   signal    add_res, sub_res, or_res, and_res,res_s, eq_res, sll_res, slr_res, slt_res, xor_res :  STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);
+   signal    add_res, sub_res, or_res, and_res,res_s, eq_res, sll_res, srl_res, slt_res, xor_res :  STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);
 
    
 BEGIN
@@ -58,7 +58,7 @@ BEGIN
                sll_res when sll_op,
                srl_res when srl_op,
                xor_res when xor_op,
-               slt_res when slt_op,
+               slt_res when lts_op,
                (others => '1') when others; 
 
 
